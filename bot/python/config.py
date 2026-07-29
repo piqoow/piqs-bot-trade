@@ -22,38 +22,38 @@ class TradingConfig:
     magic: int = 20240728               # Magic number untuk identifikasi
     comment: str = "PiqsBot_RSI_v2"     # Comment untuk order
 
-    # RSI Levels
+    # RSI Levels (AGGRESIF - threshold lebih rendah)
     rsi_period: int = 14                # RSI Period
-    rsi_extreme_buy: float = 15.0       # Level kritis buy (RSI < 15)
-    rsi_warning_buy: float = 30.0      # Level warning buy
-    rsi_warning_sell: float = 70.0     # Level warning sell
-    rsi_extreme_sell: float = 85.0     # Level kritis sell (RSI > 85)
+    rsi_extreme_buy: float = 25.0      # Level kritis buy (RSI < 25) - AGGRESIF
+    rsi_warning_buy: float = 35.0       # Level warning buy (RSI < 35)
+    rsi_warning_sell: float = 65.0     # Level warning sell (RSI > 65)
+    rsi_extreme_sell: float = 75.0     # Level kritis sell (RSI > 75) - AGGRESIF
 
-    # Money Management
+    # Money Management (AGGRESIF)
     lot_mode: str = "fixed"            # fixed, risk_based, minimum
-    lot_size: float = 0.10             # Fixed lot
+    lot_size: float = 0.02            # Lot tetap (kecil - 0.02)
     risk_percent: float = 2.0          # Risk per trade (%)
-    max_lot: float = 1.0               # Maximum lot
-    max_daily_trades: int = 10         # Max trades per day
+    max_lot: float = 0.02               # Maximum lot
+    max_daily_trades: int = 20         # Max trades per day (AGGRESIF)
 
-    # Stop Loss & Take Profit (in points)
-    stop_loss_pts: int = 150           # SL: 150 points = 15 pips
-    take_profit_pts: int = 100        # TP: 100 points = 10 pips
+    # Stop Loss & Take Profit (AGGRESIF)
+    stop_loss_pts: int = 100           # SL: 100 points (lebih ketat)
+    take_profit_pts: int = 80         # TP: 80 points (lebih cepat profit)
 
     # Spread Protection
-    max_spread: int = 30               # Max spread (points)
+    max_spread: int = 50               # Max spread (AGGRESIF - lebih toleran)
 
     # Trading Hours (Server Time)
-    session_start: int = 9            # Start hour (09:00)
-    session_end: int = 21             # End hour (21:00)
+    session_start: int = 0            # Start hour (00:00 - 24 jam)
+    session_end: int = 23             # End hour (23:59)
 
-    # Trailing Stop
-    trailing_stop_pts: int = 50        # Trailing distance
-    trailing_step: int = 10            # Step for trailing
+    # Trailing Stop (AGGRESIF)
+    trailing_stop_pts: int = 30        # Trailing distance (lebih ketat)
+    trailing_step: int = 5             # Step for trailing
 
-    # Risk Control
-    max_consecutive_loss: int = 3       # Pause after N consecutive losses
-    max_daily_loss_percent: float = 5.0  # Max daily loss (%)
+    # Risk Control (AGGRESIF)
+    max_consecutive_loss: int = 4       # Pause after N consecutive losses
+    max_daily_loss_percent: float = 10.0  # Max daily loss (%)
 
 
 @dataclass

@@ -166,51 +166,65 @@ class RSITrigger:
 
     def is_buy_signal(self, signal: RSISignal) -> bool:
         """
-        Cek apakah conditions untuk BUY terpenuhi
+        Cek apakah conditions untuk BUY terpenuhi (AGGRESIF)
 
         BUY Signal conditions:
-        1. RSI < 15 (extreme) ATAU RSI crosses up dari < 15
-        2. Candle sudah confirmed (close)
+        1. RSI < extreme_buy (default 25) → BUY
+        2. RSI crosses UP dari zona oversold
+        3. Candle sudah confirmed (close)
         """
         if not signal.is_confirmed:
             return False
 
-        # RSI crosses up from extreme zone
-        crossed_up = (signal.value_prev < self.extreme_buy and
-                     signal.value >= self.extreme_buy)
+        # RSI crosses up from oversold zone
+        crossed_up = (signal.value_prev < self.warning_buy) and \
+                     (signal.value >= self.warning_buy) and \
+                     (signal.value < self.extreme_buy * 1.5)
 
-        # RSI still in extreme zone
-        extreme = signal.value < self.extreme_buy
+        # RSI still in extreme/warning zone
+        in_zone = signal.value < self.extreme_buy
 
-        return crossed_up or extreme
+        # RSI recovering from oversold (AGGRESIF)
+        recovering = (signal.value < self.warning_buy) and \
+                     (signal.value > signal.value_prev)
+
+        return crossed_up or in_zone or recovering
 
     def is_sell_signal(self, signal: RSISignal) -> bool:
         """
-        Cek apakah conditions untuk SELL terpenuhi
+        Cek apakah conditions untuk SELL terpenuhi (AGGRESIF)
 
         SELL Signal conditions:
-        1. RSI > 85 (extreme) ATAU RSI crosses down dari > 85
-        2. Candle sudah confirmed (close)
+        1. RSI > extreme_sell (default 75) → SELL
+        2. RSI crosses DOWN dari zona overbought
+        3. Candle sudah confirmed (close)
         """
         if not signal.is_confirmed:
             return False
 
-        # RSI crosses down from extreme zone
-        crossed_down = (signal.value_prev > self.extreme_sell and
-                        signal.value <= self.extreme_sell)
+        # RSI crosses down from overbought zone
+        crossed_down = (signal.value_prev > self.warning_sell) and \
+                       (signal.value <= self.warning_sell) and \
+                       (signal.value > self.extreme_sell * 0.85)
 
         # RSI still in extreme zone
-        extreme = signal.value > self.extreme_sell
+        in_zone = signal.value > self.extreme_sell
 
-        return crossed_down or extreme
+        # RSI reversing from overbought (AGGRESIF)
+        reversing = (signal.value > self.warning_sell) and \
+                    (signal.value < signal.value_prev)
+
+        return crossed_down or in_zone or reversing
 
     def should_close_buy(self, signal: RSISignal) -> bool:
-        """Cek apakah posisi BUY harus ditutup (RSI extreme sell)"""
-        return signal.zone == RSIZone.EXTREME_SELL
+        """Cek apakah posisi BUY harus ditutup (RSI extreme sell) - AGGRESIF"""
+        # Close jika RSI masuk zona overbought
+        return signal.value > self.warning_sell
 
     def should_close_sell(self, signal: RSISignal) -> bool:
-        """Cek apakah posisi SELL harus ditutup (RSI extreme buy)"""
-        return signal.zone == RSIZone.EXTREME_BUY
+        """Cek apakah posisi SELL harus ditutup (RSI extreme buy) - AGGRESIF"""
+        # Close jika RSI masuk zona oversold
+        return signal.value < self.warning_buy
 
     def get_last_signal(self) -> Optional[RSISignal]:
         """Get sinyal terakhir"""

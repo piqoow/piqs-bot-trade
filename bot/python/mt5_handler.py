@@ -172,12 +172,16 @@ class MT5Handler:
         if tick is None:
             return None
 
+        # Calculate spread from bid/ask
+        point = mt5.symbol_info(symbol).point if mt5.symbol_info(symbol) else 0.01
+        spread = int((tick.ask - tick.bid) / point) if point > 0 else 0
+
         return TickData(
             symbol=symbol,
             bid=tick.bid,
             ask=tick.ask,
             time=tick.time,
-            spread=tick.spread
+            spread=spread
         )
 
     def get_rates(self, symbol: str, timeframe: int = 15,
@@ -437,6 +441,7 @@ class MT5Handler:
             if self.debug:
                 print(f"[MT5] Order REJECTED | Retcode: {result.retcode}")
                 print(f"      Comment: {result.comment}")
+                print(f"      Request: price={price}, sl={sl}, tp={tp}")
             return None
 
         if self.debug:

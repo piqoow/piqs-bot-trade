@@ -104,9 +104,17 @@ class PiqsBot:
 
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals"""
-        print("\n" + "="*50)
-        print("SHUTDOWN SIGNAL RECEIVED")
-        print("="*50)
+        import sys
+        # Non-reentrant shutdown
+        if not hasattr(self, '_shutting_down'):
+            self._shutting_down = True
+            try:
+                sys.stderr.write("\n" + "="*50 + "\n")
+                sys.stderr.write("SHUTDOWN SIGNAL RECEIVED\n")
+                sys.stderr.write("="*50 + "\n")
+                sys.stderr.flush()
+            except:
+                pass
         self.stop()
 
     # =========================================================================
