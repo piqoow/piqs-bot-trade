@@ -15,7 +15,7 @@ Usage:
     python piqs_bot.py
 
 Author: PiqsBot Trade
-Version: 2.0.0
+Version: 2.0.1 (MT5 Edition)
 """
 
 import sys
@@ -53,12 +53,13 @@ class PiqsBot:
 
     def __init__(self):
         # Configuration
-        self.symbol = TRADING.symbol
+        self.symbol = TRADING.symbol  # "XAUUSDm" untuk Exness
         self.timeframe = TRADING.timeframe
         self.magic = TRADING.magic
 
-        # Modules
+        # Modules - MT5 Handler
         self.mt5 = MT5Handler(debug=BOT.debug)
+
         self.rsi = RSITrigger(
             symbol=self.symbol,
             period=TRADING.rsi_period,
@@ -67,6 +68,7 @@ class PiqsBot:
             warning_buy=TRADING.rsi_warning_buy,
             warning_sell=TRADING.rsi_warning_sell
         )
+
         self.mm = MoneyManager(
             mode=TRADING.lot_mode,
             fixed_lot=TRADING.lot_size,
@@ -75,10 +77,11 @@ class PiqsBot:
             max_daily_trades=TRADING.max_daily_trades,
             max_daily_loss=TRADING.max_daily_loss_percent
         )
+
         self.api = APIClient(
             url=API.url,
             api_key=API.api_key,
-            timeout=API.timeout // 1000,  # Convert to seconds
+            timeout=API.timeout // 1000,
             retry_count=API.retry_count,
             debug=BOT.debug
         )
@@ -118,30 +121,33 @@ class PiqsBot:
             True jika berhasil
         """
         print("\n" + "="*50)
-        print("PiqsBot v2.0.0 - INITIALIZING")
+        print("PiqsBot v2.0.1 - INITIALIZING")
+        print("Using: MetaTrader 5")
         print("="*50)
 
         # Initialize MT5
         if not self.mt5.initialize():
             print("ERROR: Gagal connect ke MT5!")
+            print("Pastikan MT5 sudah running dan terminal enabled")
             return False
 
         # Verify symbol
         info = self.mt5.get_symbol_info(self.symbol)
         if info is None:
-            print(f"ERROR: Symbol {self.symbol} tidak tersedia!")
-            return False
-
-        print(f"Symbol: {self.symbol}")
-        print(f"Spread: {info['spread']} pts")
-        print(f"Point: {info['point']}")
+            print(f"WARNING: Symbol {self.symbol} tidak tersedia")
+            print("Pastikan symbol XAUUSD ada di Market Watch")
+        else:
+            print(f"Symbol: {self.symbol}")
+            print(f"Spread: {info['spread']} pts")
+            print(f"Point: {info['point']}")
 
         # Check RSI data
         closes = self.mt5.get_closes(self.symbol, self.timeframe, 50)
         if len(closes) < 20:
             print(f"WARNING: RSI data mungkin belum cukup ({len(closes)} candles)")
+            print("Tunggu beberapa menit untuk data terisi...")
 
-        # Ping API server
+        # Ping API server (optional)
         if API.enabled:
             if self.api.ping_server():
                 print("API Server: Connected")
@@ -290,11 +296,7 @@ class PiqsBot:
     def _execute_trade(self, order_type: OrderType, rsi_value: float):
         """Eksekusi trade baru"""
         # Calculate lot
-        info = self.mt5.get_symbol_info(self.symbol)
-        if info is None:
-            return
-
-        if TRADING.lot_mode == "RISK_BASED":
+        if TRADING.lot_mode == "risk_based":
             lot = self.mt5.calculate_lot_risk(
                 self.symbol,
                 TRADING.stop_loss_pts,
@@ -343,12 +345,20 @@ class PiqsBot:
         - Sell: SL turun mengikuti harga jika profit > trailing_distance
         """
         trailing_pts = TRADING.trailing_stop_pts
-        info = self.mt5.get_symbol_info(self.symbol)
+
+        # Get symbol info
+        info = self.mt5.get_symbol_info(pos.symbol)
         if info is None:
             return
 
         point = info["point"]
-        current_price = pos.price_current
+
+        # Get current price
+        tick = self.mt5.get_tick(pos.symbol)
+        if tick is None:
+            return
+
+        current_price = tick.bid if pos.type == OrderType.BUY else tick.ask
 
         if pos.type == OrderType.BUY:
             # Calculate new SL
@@ -462,7 +472,7 @@ class PiqsBot:
             price_close=pos.price_current,
             profit=pos.profit,
             symbol=pos.symbol,
-            time_open=int(time.time()),  # Should get from MT5
+            time_open=int(time.time()),
             time_close=int(time.time()),
             ip_address=self.api._get_ip_address(),
             magic=pos.magic,

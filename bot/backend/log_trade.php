@@ -1,7 +1,11 @@
 <?php
 //+------------------------------------------------------------------+
-//|  log_trade.php - API Endpoint untuk MQL5 Expert Advisor          |
+//|  log_trade.php - API Endpoint untuk MQL5/Python Trading Bot       |
 //|  XAUUSD Scalping Bot - Backend                                   |
+//|                                                                  |
+//|  Compatible with:                                               |
+//|    - MQL5 Expert Advisor (PiqsScalper.mq5)                      |
+//|    - Python Bot (piqs_bot.py)                                    |
 //|                                                                  |
 //|  Method: POST                                                    |
 //|  Content-Type: application/x-www-form-urlencoded                |

@@ -53,14 +53,14 @@ class MoneyManager:
 
     def __init__(
         self,
-        mode: str = "FIXED",
+        mode: str = "fixed",
         fixed_lot: float = 0.10,
         risk_percent: float = 2.0,
         max_lot: float = 1.0,
         max_daily_trades: int = 10,
         max_daily_loss: float = 5.0
     ):
-        self.mode = LotMode(mode)
+        self.mode = LotMode(mode.lower())  # Convert to lowercase
         self.fixed_lot = fixed_lot
         self.risk_percent = risk_percent
         self.max_lot = max_lot
@@ -271,7 +271,7 @@ class MoneyManager:
 
     def set_mode(self, mode: str):
         """Ubah mode lot calculation"""
-        self.mode = LotMode(mode)
+        self.mode = LotMode(mode.lower())
 
     def __repr__(self) -> str:
         return (f"MoneyManager(mode={self.mode.value}, lot={self.fixed_lot}, "

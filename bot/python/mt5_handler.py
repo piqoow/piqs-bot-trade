@@ -99,17 +99,35 @@ class MT5Handler:
                 print(f"[MT5] Initialize GAGAL | Error: {mt5.last_error()}")
             return False
 
+        # Tunggu MT5 fully loaded
+        if self.debug:
+            print("[MT5] Waiting for MT5 to load...")
+        time.sleep(2)
+
+        # Retry get account info
+        for attempt in range(3):
+            self.account_info = mt5.account_info()
+            if self.account_info is not None:
+                break
+            time.sleep(1)
+
+        if self.account_info is None:
+            if self.debug:
+                print(f"[MT5] Gagal dapat account info | Error: {mt5.last_error()}")
+            # Tetap lanjut, tidak fatal
+
         self.terminal_info = mt5.terminal_info()
-        self.account_info = mt5.account_info()
 
         if self.debug:
             print("="*50)
             print("MT5 Connected Successfully!")
             print(f"Terminal: {self.terminal_info.name}")
-            print(f"Server: {self.terminal_info.server}")
-            print(f"Account: {self.account_info.login}")
-            print(f"Balance: ${self.account_info.balance:.2f}")
-            print(f"Equity: ${self.account_info.equity:.2f}")
+            if self.account_info:
+                print(f"Account: {self.account_info.login}")
+                print(f"Balance: ${self.account_info.balance:.2f}")
+                print(f"Equity: ${self.account_info.equity:.2f}")
+            else:
+                print("Account: N/A (DLL mungkin blocked)")
             print("="*50)
 
         self.initialized = True
@@ -145,8 +163,7 @@ class MT5Handler:
             "volume_step": info.volume_step,
             "point": info.point,
             "tick_value": info.trade_tick_value,
-            "tick_size": info.trade_tick_size,
-            "contract_size": info.contract_size
+            "tick_size": info.trade_tick_size
         }
 
     def get_tick(self, symbol: str) -> Optional[TickData]:
@@ -176,6 +193,16 @@ class MT5Handler:
         Returns:
             List of CandleData
         """
+        # Select symbol first
+        if not mt5.symbol_select(symbol, True):
+            if self.debug:
+                print(f"[MT5] Symbol {symbol} tidak bisa dipilih, retry...")
+            time.sleep(0.5)
+            if not mt5.symbol_select(symbol, True):
+                if self.debug:
+                    print(f"[MT5] Symbol {symbol} still not available")
+                return None
+
         # MT5 timeframe constants
         tf_map = {
             1: mt5.TIMEFRAME_M1,
@@ -189,8 +216,15 @@ class MT5Handler:
 
         tf = tf_map.get(timeframe, mt5.TIMEFRAME_M15)
 
-        rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
-        if rates is None:
+        # Retry logic untuk get rates
+        rates = None
+        for attempt in range(3):
+            rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
+            if rates is not None and len(rates) > 0:
+                break
+            time.sleep(0.5)
+
+        if rates is None or len(rates) == 0:
             if self.debug:
                 print(f"[MT5] Gagal ambil rates | Error: {mt5.last_error()}")
             return None

@@ -1,7 +1,7 @@
 # PiqsBot Trade - Dependencies
 # Python 3.8+
 
-# MetaTrader 5 connection
+# MetaTrader 5 connection (harus install MT5 di Windows)
 MetaTrader5>=5.0.45
 
 # HTTP requests for API logging

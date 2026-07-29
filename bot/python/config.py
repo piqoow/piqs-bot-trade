@@ -17,7 +17,7 @@ from typing import Optional
 @dataclass
 class TradingConfig:
     """Trading Settings"""
-    symbol: str = "XAUUSD"              # Symbol trading
+    symbol: str = "XAUUSDm"            # Symbol trading (XAUUSDm untuk Exness)
     timeframe: int = 15                 # Timeframe in minutes (M15)
     magic: int = 20240728               # Magic number untuk identifikasi
     comment: str = "PiqsBot_RSI_v2"     # Comment untuk order
@@ -30,7 +30,7 @@ class TradingConfig:
     rsi_extreme_sell: float = 85.0     # Level kritis sell (RSI > 85)
 
     # Money Management
-    lot_mode: str = "FIXED"             # FIXED, RISK_BASED, MINIMUM
+    lot_mode: str = "fixed"            # fixed, risk_based, minimum
     lot_size: float = 0.10             # Fixed lot
     risk_percent: float = 2.0          # Risk per trade (%)
     max_lot: float = 1.0               # Maximum lot
@@ -116,7 +116,7 @@ def is_trading_hours() -> bool:
     from datetime import datetime
     now = datetime.now()
     current_hour = now.hour
-    return BOT.session_start <= current_hour <= BOT.session_end
+    return TRADING.session_start <= current_hour <= TRADING.session_end
 
 
 def print_config():
